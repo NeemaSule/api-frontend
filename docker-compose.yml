@@ -1,0 +1,76 @@
+version: '3.8'
+services:
+  # MySQL Database Service
+  db:
+    image: mysql:8.0 # Or your preferred MySQL version
+    container_name: mysql_db
+    environment:
+      MYSQL_ROOT_PASSWORD: Neema@@24
+      MYSQL_DATABASE: student_db 
+      MYSQL_USER: student 
+      MYSQL_PASSWORD: Neema@@24 
+    volumes:
+      - mysql_data:/var/lib/mysql # Persist database data
+    ports:
+      - "3306:3306" # Expose port 3306 on the host (optional, for direct access)
+    restart: always
+
+  # Node.js API Service
+  api:
+    image: /student-api_api_1 # Replace with your Docker Hub API image
+    container_name: api_server
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: db # Use the service name as hostname
+      DB_USER: student
+      DB_PASSWORD: Neema@@24
+      DB_NAME: student_db
+    ports:
+      - "3000:3000" # Expose the API port
+    depends_on:
+      - db # Ensure database starts before API
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/students"] # Basic health check
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Load Balancer (NGINX)
+  loadbalancer:
+    image: nginx:1.21 # Or your preferred NGINX version
+    container_name: load_balancer
+    ports:
+      - "80:80" # Expose port 80 for web traffic
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf # Mount NGINX config
+    depends_on:
+      - frontend1
+      - frontend2
+      - frontend3
+    restart: always
+
+  # Front-End Nodes
+  frontend1:
+    image: NeemaSule/frontend-image # Replace with your front-end image
+    container_name: frontend1
+    environment:
+      NODE_ID: frontend1
+    restart: always
+  frontend2:
+    image: NeemaSule/frontend-image
+    container_name: frontend2
+    environment:
+      NODE_ID: frontend2
+    restart: always
+  frontend3:
+    image: NeemaSule/frontend-image
+    container_name: frontend3
+    environment:
+      NODE_ID: frontend3
+    restart: always
+
+volumes:
+  mysql_data: # Define the named volume for MySQL data
